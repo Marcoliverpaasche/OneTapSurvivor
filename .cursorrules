@@ -1,0 +1,262 @@
+# One Tap Survivor — Cursor Projekt-Anleitung
+# Diese Datei als .cursorrules im Projektordner speichern
+# Cursor liest sie automatisch und kennt dann den kompletten Kontext
+
+## DEINE ROLLE
+Du bist ein erfahrener iOS-Entwickler der ein vollständiges,
+produktionsbereites Swift/SpriteKit-Spiel namens "One Tap Survivor"
+für den App Store baut. Du erledigst ALLES selbst — der Nutzer
+soll so wenig wie möglich manuell machen.
+
+## PROJEKT-KONTEXT
+- App-Name: One Tap Survivor
+- Bundle ID: eu.design-code.OneTapSurvivor
+- Entwickler: Marc Oliver Junker / Design-Code (design-code.eu)
+- Plattform: iOS 16+, Portrait only, iPhone
+- Sprache: Swift 5.9, SpriteKit, UIKit (kein SwiftUI, kein Storyboard)
+- Monetization: AppLovin MAX Rewarded Ads
+- Game Center: Leaderboard ID = ots.highscore
+- Apple Developer Account: shortysonst@icloud.com
+
+## TECH STACK — NIEMALS ABWEICHEN
+- Swift 5.9+
+- SpriteKit für Game-Rendering
+- UIKit für alle UI-Overlays (kein SwiftUI)
+- AppLovin MAX SDK (Swift Package: https://github.com/AppLovin/AppLovin-MAX-Swift-Package)
+- GameKit (Game Center)
+- UserDefaults für lokale Persistenz
+- Kein Storyboard, kein Interface Builder
+- Minimum iOS 16.0
+
+## PROJEKTSTRUKTUR DIE DU ERSTELLEN SOLLST
+```
+OneTapSurvivor/
+├── OneTapSurvivor.xcodeproj/    ← Xcode Projekt (via xcodeproj Tool)
+├── OneTapSurvivor/
+│   ├── App/
+│   │   ├── AppDelegate.swift
+│   │   └── SceneDelegate.swift
+│   ├── Game/
+│   │   ├── GameScene.swift
+│   │   ├── Player.swift
+│   │   ├── ObstacleManager.swift
+│   │   └── PhysicsCategories.swift
+│   ├── UI/
+│   │   ├── GameViewController.swift
+│   │   ├── StartScreenView.swift
+│   │   ├── GameOverlay.swift
+│   │   └── DailyBonusView.swift
+│   ├── Ads/
+│   │   └── AdManager.swift
+│   ├── Core/
+│   │   ├── Constants.swift
+│   │   ├── GameState.swift
+│   │   └── Extensions.swift
+│   ├── Assets.xcassets/
+│   │   └── AppIcon.appiconset/
+│   └── Info.plist
+├── .cursorrules                 ← diese Datei
+└── README.md
+```
+
+## DESIGN-SYSTEM — EXAKT DIESE WERTE VERWENDEN
+```swift
+// Farben
+let bgColor      = UIColor(hex: "#080C14")   // Hintergrund
+let surfaceColor = UIColor(hex: "#0F1623")   // Karten
+let borderColor  = UIColor(hex: "#1C2738")   // Rahmen
+let accentColor  = UIColor(hex: "#00E5FF")   // Cyan — Spieler, Highlights
+let dangerColor  = UIColor(hex: "#FF3B55")   // Rot — Hindernisse, Leben
+let warnColor    = UIColor(hex: "#FFB800")   // Gold — Coins, Werbung
+let greenColor   = UIColor(hex: "#00E676")   // Grün — Erfolg, Double Score
+let textColor    = UIColor(hex: "#E8EDF5")   // Text
+let mutedColor   = UIColor(hex: "#5A6880")   // Sekundärtext
+
+// Typografie
+// Primär: SF Pro Display (systemFont weight: .heavy)
+// Sekundär: SF Pro Text (systemFont weight: .regular/.medium)
+// Score: fontSize 42, weight .heavy
+// Titel: fontSize 22-26, weight .heavy
+// Body: fontSize 14, weight .regular
+// Labels: fontSize 11, weight .medium
+
+// Abstände
+let cornerRadius: CGFloat = 12   // Karten
+let cardPadding:  CGFloat = 24   // Innen-Padding
+let spacing:      CGFloat = 16   // Zwischen-Elemente
+```
+
+## SPIELMECHANIK — EXAKTE WERTE
+```swift
+let startSpeed:   CGFloat = 220   // Punkte/Sekunde
+let maxSpeed:     CGFloat = 700   // Maximale Geschwindigkeit
+let gravity:      CGFloat = -1200 // SpriteKit Physik
+let jumpForce:    CGFloat = 580   // Sprungkraft
+let playerRadius: CGFloat = 22    // Spieler-Radius
+let playerX:      CGFloat = 120   // Fixe X-Position des Spielers
+
+// Speed-Formel: speed = min(220 + score * 4, 700)
+// Gap-Formel: gapRatio = max(0.28, 0.38 - score * 0.001)
+// Spawn-Intervall: max(90 - score / 2, 50) Frames
+```
+
+## MONETIZATION — REWARDED ADS
+Drei Trigger-Momente:
+1. Leben verloren (erstes Mal) → "Werbung für +1 Leben"
+   - 5 Sekunden Countdown danach automatisch Game Over
+2. Game Over → "Score verdoppeln"  
+   - Einmalig pro Spiel, Button verschwindet nach Nutzung
+3. Täglicher Bonus → "Werbung für Coins"
+   - 7-Tage-Streak, Coins: [25,30,40,50,60,75,100]
+
+## AD MANAGER VERHALTEN
+```swift
+// Production: echte AppLovin MAX Ads
+// Debug: UIAlertController Simulation mit 5s Countdown
+// Bei Ad-Fehler: Reward trotzdem geben (gute UX)
+// Nach jeder Ad: sofort neue vorladen
+// Keys: in Constants.swift, NICHT hardcoded
+```
+
+## PERSISTENZ (UserDefaults Keys)
+```swift
+"ots_best"           // Int — Highscore
+"ots_coins"          // Int — Münzen
+"ots_games"          // Int — Gespielte Spiele
+"ots_streak"         // Int — Login-Streak in Tagen
+"ots_last_day"       // String — "yyyy-MM-dd" letzter Claim
+"ots_daily_claimed"  // Bool — Heute schon abgeholt
+```
+
+## GAME CENTER
+```swift
+// Leaderboard ID: "ots.highscore"
+// Score submitten nach jedem Game Over
+// GKGameCenterViewController für Anzeige
+// Authentifizierung in AppDelegate
+```
+
+## XCODE PROJEKT ERSTELLEN
+Wenn du das Xcode-Projekt (.xcodeproj) erstellen sollst,
+verwende das Tool `xcodeproj` (Ruby Gem) oder erstelle die
+Projektdatei manuell. Alternativ nutze `xcodegen` mit einer
+project.yml Datei.
+
+Empfohlener Weg mit XcodeGen:
+```bash
+# XcodeGen installieren (einmalig)
+brew install xcodegen
+
+# project.yml erstellen (du erstellst diese Datei)
+# Dann ausführen:
+xcodegen generate
+```
+
+## PROJECT.YML FÜR XCODEGEN
+```yaml
+name: OneTapSurvivor
+options:
+  bundleIdPrefix: eu.design-code
+  deploymentTarget:
+    iOS: "16.0"
+  xcodeVersion: "15.0"
+
+settings:
+  base:
+    PRODUCT_BUNDLE_IDENTIFIER: eu.design-code.OneTapSurvivor
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "1"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    SUPPORTS_MACCATALYST: "NO"
+    ENABLE_BITCODE: "NO"
+
+targets:
+  OneTapSurvivor:
+    type: application
+    platform: iOS
+    deploymentTarget: "16.0"
+    sources:
+      - OneTapSurvivor
+    settings:
+      base:
+        INFOPLIST_FILE: OneTapSurvivor/Info.plist
+        PRODUCT_NAME: "One Tap Survivor"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        SWIFT_OPTIMIZATION_LEVEL: "-Onone"
+    dependencies:
+      - package: AppLovinSDK
+    capabilities:
+      gameCenter: {}
+    info:
+      path: OneTapSurvivor/Info.plist
+
+packages:
+  AppLovinSDK:
+    url: https://github.com/AppLovin/AppLovin-MAX-Swift-Package
+    from: "12.0.0"
+```
+
+## ANLEITUNG FÜR CURSOR: SO GEHST DU VOR
+
+### Phase 1 — Ordnerstruktur
+Erstelle alle Ordner und leere Dateien laut Projektstruktur oben.
+
+### Phase 2 — XcodeGen
+Erstelle `project.yml` mit dem Inhalt oben.
+Führe dann aus: `xcodegen generate`
+Das erstellt das `.xcodeproj` automatisch.
+
+### Phase 3 — Swift Dateien befüllen
+Befülle jede Datei vollständig und produktionsbereit:
+
+**Reihenfolge:**
+1. `Core/Constants.swift` — alle Konstanten zuerst
+2. `Core/Extensions.swift` — UIColor, CGPoint Helpers
+3. `Core/GameState.swift` — UserDefaults Wrapper
+4. `Game/PhysicsCategories.swift` — Physics Bitmasks
+5. `Game/Player.swift` — Spieler-Node
+6. `Game/ObstacleManager.swift` — Hindernisse
+7. `Game/GameScene.swift` — Haupt-Spielszene
+8. `Ads/AdManager.swift` — AppLovin MAX
+9. `UI/GameViewController.swift` — Haupt-ViewController
+10. `App/AppDelegate.swift` — App-Start
+11. `Info.plist` — alle Keys inkl. ATT
+
+### Phase 4 — Assets
+Erstelle `Assets.xcassets` mit:
+- AppIcon: alle required sizes (1024x1024 base)
+- Accent Color: #00E5FF
+
+### Phase 5 — Verifizieren
+Nach dem Erstellen aller Dateien:
+```bash
+# Projekt bauen (ohne Simulator)
+xcodebuild -scheme OneTapSurvivor -destination 'generic/platform=iOS' build
+```
+Alle Fehler sofort beheben.
+
+## QUALITÄTS-STANDARDS
+- Kein Code ohne Kommentar bei komplexer Logik
+- Kein Force-Unwrap (kein `!`) außer in IBOutlets
+- Schwache Referenzen bei Delegates: `weak var delegate`
+- Main Thread für alle UI-Updates: `DispatchQueue.main.async`
+- Memory Leaks vermeiden: `[weak self]` in Closures
+- Fehlerbehandlung überall wo nötig
+
+## WAS DU NIEMALS MACHEN SOLLST
+- Kein SwiftUI verwenden
+- Kein Storyboard verwenden
+- Keine hardcodierten API-Keys (immer Constants.swift)
+- Keine synchronen Netzwerk-Calls
+- Keine Retain Cycles
+- Nicht den AppLovin SDK Key in den Code schreiben
+- Keine UIAlertController für Game-UI (nur für Debug-Ads)
+
+## WENN DU FERTIG BIST
+Sage dem Nutzer exakt:
+1. Welche Keys er in Constants.swift eintragen muss
+2. Dass er `xcodegen generate` ausführen soll falls noch nicht passiert
+3. Wie er in Xcode das Signing einstellt (Team: shortysonst@icloud.com)
+4. Dass er Cmd+R drücken kann um zu bauen
