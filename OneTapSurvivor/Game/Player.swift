@@ -1,6 +1,6 @@
 import SpriteKit
 
-/// Spieler: farbige Sprites wie die Säulen. Sprung ist manuell — jeder Tap gibt Höhe, danach fällt der Ball.
+/// Spieler: runder Orb, Glow, Trail. Jeder Tap gibt Höhe, danach fällt der Ball.
 final class Player {
 
     let root = SKNode()
@@ -12,6 +12,8 @@ final class Player {
     private var hasJumped = false
     private var velocityY: CGFloat = 0
 
+    var hasStarted: Bool { hasJumped }
+
     var position: CGPoint {
         get { root.position }
         set { root.position = newValue }
@@ -22,32 +24,24 @@ final class Player {
     }
 
     init(startPosition: CGPoint) {
-        let side = Gameplay.playerRadius * 2
+        let diameter = Gameplay.playerRadius * 2
         hoverY = startPosition.y
 
-        glowNode = SKSpriteNode(
-            color: Palette.accent.withAlphaComponent(0.35),
-            size: CGSize(width: side * 1.55, height: side * 1.55)
+        glowNode = SKSpriteNode.circle(
+            diameter: diameter * 1.7,
+            color: Palette.accent.withAlphaComponent(0.35)
         )
         glowNode.zPosition = 0
+        glowNode.blendMode = .add
 
-        let ring = SKSpriteNode(
-            color: .white,
-            size: CGSize(width: side + 10, height: side + 10)
-        )
+        let ring = SKSpriteNode.circle(diameter: diameter + 10, color: .white)
         ring.zPosition = 1
 
-        let body = SKSpriteNode(
-            color: Palette.accent,
-            size: CGSize(width: side, height: side)
-        )
+        let body = SKSpriteNode.circle(diameter: diameter, color: Palette.accent)
         body.name = "player"
         body.zPosition = 2
 
-        let shine = SKSpriteNode(
-            color: .white,
-            size: CGSize(width: 12, height: 12)
-        )
+        let shine = SKSpriteNode.circle(diameter: 12, color: .white)
         shine.position = CGPoint(x: -7, y: 8)
         shine.zPosition = 3
         body.addChild(shine)
@@ -74,9 +68,9 @@ final class Player {
         trailLayer.zPosition = 40
         for index in 0..<trailCount {
             let factor = 1 - CGFloat(index) / CGFloat(trailCount)
-            let trail = SKSpriteNode(
-                color: Palette.accent.withAlphaComponent(0.18 + factor * 0.4),
-                size: CGSize(width: side * (0.35 + factor * 0.4), height: side * (0.35 + factor * 0.4))
+            let trail = SKSpriteNode.circle(
+                diameter: diameter * (0.35 + factor * 0.4),
+                color: Palette.accent.withAlphaComponent(0.18 + factor * 0.4)
             )
             trail.zPosition = CGFloat(trailCount - index)
             trail.position = startPosition
@@ -98,16 +92,38 @@ final class Player {
         hoverY = startPosition.y
         hasJumped = false
         velocityY = 0
+        root.alpha = 1
         root.position = startPosition
         physicsBody?.velocity = .zero
         trailNodes.forEach { $0.position = startPosition }
     }
 
-    /// Jeder Tap setzt die Aufwärtsgeschwindigkeit neu — danach fällt der Ball von selbst.
     func jump() {
         hasJumped = true
         velocityY = Gameplay.jumpForce
         physicsBody?.velocity = .zero
+        Feedback.tap()
+    }
+
+    func flashHit() {
+        root.removeAction(forKey: "hitFlash")
+        root.run(
+            SKAction.sequence([
+                SKAction.fadeAlpha(to: 0.2, duration: 0.07),
+                SKAction.fadeAlpha(to: 1, duration: 0.07),
+                SKAction.fadeAlpha(to: 0.2, duration: 0.07),
+                SKAction.fadeAlpha(to: 1, duration: 0.07)
+            ]),
+            withKey: "hitFlash"
+        )
+    }
+
+    func isAtVerticalEdge(in size: CGSize) -> Bool {
+        guard hasJumped else { return false }
+        let minY = max(Gameplay.playerRadius + 24, size.height * 0.12)
+        let maxY = min(size.height - Gameplay.playerRadius - 24, size.height * 0.88)
+        let y = root.position.y
+        return y <= minY + 0.5 || y >= maxY - 0.5
     }
 
     func step(dt: CGFloat, in size: CGSize, pulseTime: TimeInterval) {

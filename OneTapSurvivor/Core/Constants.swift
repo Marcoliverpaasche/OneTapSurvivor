@@ -63,6 +63,8 @@ enum Gameplay {
     static let startingLives = 3
     static let continueCountdownSeconds = 5
     static let damageCooldown: TimeInterval = 1.2
+    /// Continue-Werbung erst nach so vielen abgeschlossenen Spielen.
+    static let adsAfterGamesPlayed = 2
 
     /// speed = min(220 + score * 4, 700)
     static func speed(for score: Int) -> CGFloat {
@@ -74,9 +76,9 @@ enum Gameplay {
         max(0.28, 0.38 - CGFloat(score) * 0.001)
     }
 
-    /// Spawn-Intervall: max(90 - score / 2, 50) Frames
-    static func spawnInterval(for score: Int) -> Int {
-        max(90 - score / 2, 50)
+    /// Spawn-Abstand in Sekunden: max(90 - score / 2, 50) Frames bei 60 fps.
+    static func spawnInterval(for score: Int) -> TimeInterval {
+        TimeInterval(max(90 - score / 2, 50)) / 60.0
     }
 }
 

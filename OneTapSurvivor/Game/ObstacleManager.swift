@@ -29,13 +29,13 @@ final class ObstacleManager {
 
     /// Bewegt alle Hindernisse, zählt Punkte und räumt Offscreen-Nodes auf.
     @discardableResult
-    func update(gameSpeed: CGFloat, playerX: CGFloat) -> Int {
+    func update(gameSpeed: CGFloat, playerX: CGFloat, dt: CGFloat) -> Int {
         var scored = 0
         var toRemove: [SKNode] = []
         let sceneHeight = scene?.size.height ?? 0
 
         for node in layer.children {
-            node.position.x -= gameSpeed / 60.0
+            node.position.x -= gameSpeed * dt
 
             if let name = node.name, name.hasPrefix("wallTop_"),
                node.position.x + wallWidth(of: node) < playerX,
@@ -92,11 +92,18 @@ final class ObstacleManager {
 
     private func makeWall(width: CGFloat, height: CGFloat, at pos: CGPoint) -> SKSpriteNode {
         let wall = SKSpriteNode(
-            color: Palette.danger.withAlphaComponent(0.85),
+            color: Palette.danger.withAlphaComponent(0.9),
             size: CGSize(width: width, height: height)
         )
         wall.position = CGPoint(x: pos.x + width / 2, y: pos.y + height / 2)
         wall.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+
+        let edge = SKSpriteNode(
+            color: Palette.danger,
+            size: CGSize(width: 5, height: height)
+        )
+        edge.position = CGPoint(x: -width / 2 + 2.5, y: 0)
+        wall.addChild(edge)
 
         let body = SKPhysicsBody(rectangleOf: wall.size)
         body.categoryBitMask = PhysicsCategory.obstacle
