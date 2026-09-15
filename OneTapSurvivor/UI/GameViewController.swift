@@ -32,6 +32,12 @@ final class GameViewController: UIViewController {
         setupDailyBonus()
         setupToast()
         refreshStartStats()
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(appWillResignActive),
+            name: UIApplication.willResignActiveNotification,
+            object: nil
+        )
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -145,7 +151,10 @@ final class GameViewController: UIViewController {
         overlay.showGameOver(score: currentScore, isNewBest: isNewBest, canDouble: scoreDoubled == false)
         if didFinishRun == false {
             didFinishRun = true
-            state.registerFinalScore(currentScore)
+            let isNewBest = state.registerFinalScore(currentScore)
+            if isNewBest {
+                Feedback.best()
+            }
             submitScoreToGameCenter(currentScore)
         }
         refreshStartStats()
@@ -200,6 +209,10 @@ final class GameViewController: UIViewController {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.2) { [weak self] in
             UIView.animate(withDuration: 0.3) { self?.toastLabel.alpha = 0 }
         }
+    }
+
+    @objc private func appWillResignActive() {
+        gameScene?.pauseForBackground()
     }
 
     private func requestTrackingIfNeeded() {
@@ -308,7 +321,8 @@ extension GameViewController: DailyBonusViewDelegate {
 extension GameViewController: GameSceneDelegate {
     func gameDidDie(score: Int, isFirstDeath: Bool) {
         currentScore = score
-        if isFirstDeath {
+        let canOfferContinue = isFirstDeath && state.gamesPlayed >= Gameplay.adsAfterGamesPlayed
+        if canOfferContinue {
             overlay.showContinue(score: score)
             startContinueCountdown()
         } else {

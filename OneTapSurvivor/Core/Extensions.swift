@@ -1,5 +1,6 @@
 import UIKit
 import SpriteKit
+import AudioToolbox
 
 extension UIColor {
     convenience init(hex: String, alpha: CGFloat = 1) {
@@ -144,6 +145,63 @@ extension SKLabelNode {
         node.fontSize = size
         node.fontColor = color
         return node
+    }
+}
+
+extension SKSpriteNode {
+    /// Runder, farbiger Sprite — Bitmap-Kreis, sichtbar wie die Säulen.
+    static func circle(diameter: CGFloat, color: UIColor) -> SKSpriteNode {
+        let side = max(ceil(diameter), 8)
+        let format = UIGraphicsImageRendererFormat()
+        format.opaque = false
+        format.scale = 3
+        let image = UIGraphicsImageRenderer(
+            size: CGSize(width: side, height: side),
+            format: format
+        ).image { renderer in
+            var red: CGFloat = 0
+            var green: CGFloat = 0
+            var blue: CGFloat = 0
+            var alpha: CGFloat = 0
+            color.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            renderer.cgContext.setFillColor(red: red, green: green, blue: blue, alpha: alpha)
+            renderer.cgContext.fillEllipse(in: CGRect(x: 0, y: 0, width: side, height: side))
+        }
+        return SKSpriteNode(
+            texture: SKTexture(image: image),
+            size: CGSize(width: diameter, height: diameter)
+        )
+    }
+}
+
+enum Feedback {
+    static func tap() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        AudioServicesPlaySystemSound(1104)
+    }
+
+    static func hit() {
+        UINotificationFeedbackGenerator().notificationOccurred(.error)
+        AudioServicesPlaySystemSound(1053)
+    }
+
+    static func score() {
+        UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+    }
+
+    static func combo() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        AudioServicesPlaySystemSound(1111)
+    }
+
+    static func gameOver() {
+        UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        AudioServicesPlaySystemSound(1073)
+    }
+
+    static func best() {
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        AudioServicesPlaySystemSound(1025)
     }
 }
 
