@@ -1,0 +1,11 @@
+{
+  "name": "One Tap Survivor",
+  "install": "chmod +x .cursor/validate-project.sh && ./.cursor/validate-project.sh",
+  "terminals": [
+    {
+      "name": "docs-server",
+      "command": "cd docs && python3 -m http.server 8080 --bind 0.0.0.0"
+    }
+  ],
+  "ports": [8080]
+}
