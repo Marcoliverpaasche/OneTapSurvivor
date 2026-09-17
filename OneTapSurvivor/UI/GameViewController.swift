@@ -1,7 +1,6 @@
 import UIKit
 import SpriteKit
 import GameKit
-import AppTrackingTransparency
 
 final class GameViewController: UIViewController {
 
@@ -13,7 +12,6 @@ final class GameViewController: UIViewController {
     private var scoreDoubled = false
     private var continueTimer: Timer?
     private var continueSeconds = Gameplay.continueCountdownSeconds
-    private var didRequestTracking = false
     private var didFinishRun = false
 
     private let skView = SKView()
@@ -42,7 +40,8 @@ final class GameViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        requestTrackingIfNeeded()
+        // Hinweis: Der ATT-Prompt wird im Release von AppLovin MAX im Rahmen des
+        // GDPR-Consent-Flows (Google UMP) automatisch ausgelöst — siehe AdManager.
         if ProcessInfo.processInfo.arguments.contains("-autoPlay"), startScreen.isHidden == false {
             beginRun()
         }
@@ -213,15 +212,6 @@ final class GameViewController: UIViewController {
 
     @objc private func appWillResignActive() {
         gameScene?.pauseForBackground()
-    }
-
-    private func requestTrackingIfNeeded() {
-        guard didRequestTracking == false else { return }
-        didRequestTracking = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            guard let self, self.startScreen.isHidden == false else { return }
-            ATTrackingManager.requestTrackingAuthorization { _ in }
-        }
     }
 }
 

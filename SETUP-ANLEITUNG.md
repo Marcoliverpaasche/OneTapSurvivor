@@ -40,11 +40,22 @@
 
 ## SCHRITT 2 — AppLovin MAX SDK einbinden (3 Min)
 
+> Hinweis: Wenn du das Projekt mit `xcodegen generate` erzeugst, sind
+> **beide** Pakete bereits in `project.yml` deklariert und werden von Xcode
+> automatisch aufgelöst. Die manuellen Schritte unten sind nur nötig, wenn du
+> das Projekt ohne XcodeGen aufsetzt.
+
 In Xcode:
 1. File → Add Package Dependencies
 2. URL eingeben: `https://github.com/AppLovin/AppLovin-MAX-Swift-Package`
-3. Version: `12.0.0` oder höher
+3. Version: `13.0.0` oder höher
 4. Produkt: `AppLovinSDK` → Add to Target: `OneTapSurvivor`
+
+Zusätzlich für den GDPR-Consent-Flow (Google UMP) — **Pflicht in DE/EU**:
+1. File → Add Package Dependencies
+2. URL: `https://github.com/googleads/swift-package-manager-google-user-messaging-platform`
+3. Version: `2.3.0` oder höher
+4. Produkt: `UserMessagingPlatform` → Add to Target: `OneTapSurvivor`
 
 ---
 
@@ -57,22 +68,63 @@ In Xcode:
 ### SDK Key holen
 - Dashboard → Account → Keys → SDK Key kopieren
 - In `Constants.swift` eintragen: `maxSdkKey`
-- Auch in `Info.plist` bei `AppLovinSdkKey`
+- **Nur noch hier** — seit AppLovin SDK v12+/v13 wird der Key ausschließlich
+  im Code (`ALSdkInitializationConfiguration`) genutzt. Der frühere
+  `AppLovinSdkKey`-Eintrag in der `Info.plist` ist nicht mehr nötig und wurde
+  entfernt.
 
 ### Rewarded Ad Unit erstellen
 - Dashboard → MAX → Ad Units → Create Ad Unit
 - Format: **Rewarded**
-- Deine App auswählen
+- Deine App auswählen (Bundle `eu.design-code.OneTapSurvivor`,
+  App-Store-ID `6811169822`)
 - Ad Unit ID kopieren → in `Constants.swift` bei `maxRewardedAdUnitID`
 
-### Mediation Networks (empfohlen für höhere eCPMs)
-In AppLovin Dashboard → Mediation → Manage Networks:
-- Google AdMob aktivieren → eigene AdMob App-ID eintragen
-- Meta Audience Network aktivieren
-- Unity Ads aktivieren
-- Vungle aktivieren
+### Mediation Networks (später, für höhere eCPMs — optional)
+Aktuell läuft die App mit **AppLovin Exchange** (kein Extra-Adapter nötig).
+Für mehr Umsatz später in AppLovin Dashboard → Mediation → Manage Networks
+weitere Netzwerke (AdMob, Meta, Unity, Vungle …) aktivieren und die
+jeweiligen Adapter-Pakete einbinden. Jedes zusätzliche Netzwerk, das du
+aktivierst, musst du auch in der GDPR-Consent-Nachricht (siehe SCHRITT 3.5)
+als Ad-Partner ergänzen.
 
-Jedes aktive Netzwerk = höherer Wettbewerb = mehr Geld pro Ad.
+---
+
+## SCHRITT 3.5 — GDPR-Einwilligung (Google UMP) — PFLICHT in DE/EU
+
+Ohne gültige Einwilligung liefern Werbenetzwerke in Deutschland/EU praktisch
+keine (oder nur sehr schlecht bezahlte) Anzeigen aus. Der Code aktiviert
+bereits AppLovins eingebauten **Terms-&-Privacy-Flow** (Google UMP) — dieser
+zeigt in EU-Regionen automatisch den Einwilligungsdialog und danach den
+ATT-Systemdialog. Damit der Dialog erscheint, brauchst du eine in Google
+konfigurierte Consent-Nachricht:
+
+### 1. Kostenlosen AdMob-Account anlegen (hostet die UMP-Nachricht)
+- https://apps.admob.com → anmelden (kostenlos)
+- Apps → App hinzufügen → deine iOS-App (One Tap Survivor,
+  App-Store-ID `6811169822`) registrieren
+- Das ist auch dann nötig, wenn du (noch) kein AdMob als Mediation nutzt —
+  Google UMP verwaltet die Consent-Nachricht im AdMob-Dashboard.
+
+### 2. GDPR-Nachricht erstellen & veröffentlichen
+- AdMob → Privacy & messaging → GDPR → **Create message**
+- App(s) auswählen, Sprachen (mind. Deutsch) wählen
+- User consent options: **Consent** oder **Manage options** wählen
+  (NICHT „Close/do not consent“ ankreuzen)
+- Targeting: **Everywhere** → Continue
+- Message benennen → **Publish**
+
+### 3. Ad-Partner ergänzen (wichtig für Umsatz)
+- In der GDPR-Nachricht unter „Review your ad partners“ alle Netzwerke
+  auswählen, die du integrierst (mind. AppLovin/AppLovin Exchange).
+- Fehlende Partner ⇒ diese Netzwerke liefern keine Ads. Fehlende Netzwerke
+  siehst du später im Mediation Debugger unter „Missing …“.
+
+### 4. Datenschutz-URL prüfen
+- In `Constants.swift` ist `privacyPolicyURL` auf die GitHub-Pages-Seite aus
+  `docs/` gesetzt. Stelle sicher, dass GitHub Pages aktiv ist (Repo →
+  Settings → Pages → Branch `main`, Ordner `/docs`) oder trage deine eigene
+  Datenschutz-URL ein.
 
 ---
 
@@ -102,12 +154,31 @@ Jedes aktive Netzwerk = höherer Wettbewerb = mehr Geld pro Ad.
 
 1. Xcode → Simulator oder echtes iPhone auswählen
 2. `Cmd + R` → Build & Run
-3. Spiel testen — Werbung läuft im DEBUG-Modus simuliert
+3. Spiel testen — Werbung läuft im DEBUG-Modus **simuliert** (Alert mit 5s-Countdown)
 
-**Release Build:**
-1. Xcode → Product → Archive
-2. Distribute App → App Store Connect
-3. Upload
+**Echte Ads + Consent testen (Release / TestFlight, echtes Gerät):**
+1. Keys in `Constants.swift` müssen echt sein (kein `HIER_…`).
+2. Build im **Release**-Konfig auf ein echtes Gerät oder via TestFlight
+   (im Debug werden Ads absichtlich simuliert).
+3. Beim ersten Start erscheint in EU-Regionen der Google-UMP-Consent-Dialog,
+   danach der ATT-Dialog. Anschließend liefern die drei Trigger echte
+   Rewarded Ads: +1 Leben, Score ×2, täglicher Bonus.
+4. **Mediation Debugger** öffnen (temporär im Code, z. B. nach SDK-Init:
+   `ALSdk.shared().showMediationDebugger()`), um zu prüfen:
+   - Privacy → CMP zeigt „Google consent management solutions“
+   - Rewarded Ad Unit lädt (Test-Ad anzeigbar)
+   - keine „Missing …“-Netzwerke, die du integriert hast
+5. UMP außerhalb der EU testen: einmalig
+   `ALSdk.shared().termsAndPrivacyPolicyFlowSettings.debugUserGeography = .GDPR`
+   setzen (nur zum Testen!). Der Flow erscheint nur bei Neuinstallation —
+   App löschen & neu installieren, um ihn erneut zu sehen.
+
+**Release Build / App-Store-Update:**
+1. Version erhöhen (z. B. `MARKETING_VERSION` 1.1) und `CURRENT_PROJECT_VERSION`
+   hochzählen (in `project.yml`, dann `xcodegen generate`).
+2. Xcode → Product → Archive → Distribute App → App Store Connect → Upload.
+3. In App Store Connect in den **Review-Notes** vermerken: ATT wird nur für
+   iOS 14.5+ genutzt (sonst mögliche Ablehnung).
 
 ---
 

@@ -63,6 +63,8 @@ targets:
 
     dependencies:
       - package: AppLovinSDK
+      - package: GoogleUserMessagingPlatform
+        product: UserMessagingPlatform
 
     capabilities:
       gameCenter:
@@ -88,3 +90,10 @@ packages:
   AppLovinSDK:
     url: https://github.com/AppLovin/AppLovin-MAX-Swift-Package
     from: "13.0.0"
+  # Google User Messaging Platform (UMP): wird vom AppLovin-MAX-
+  # Terms-&-Privacy-Flow für die GDPR-Einwilligung benötigt.
+  # Nur UMP (nicht das komplette Google-Mobile-Ads-SDK) → kein
+  # GADApplicationIdentifier in der Info.plist erforderlich.
+  GoogleUserMessagingPlatform:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform
+    from: "2.3.0"

@@ -61,10 +61,8 @@
 			</array>
 		</dict>
 	</dict>
-	<key>AppLovinSdkKey</key>
-	<string>HIER_DEINEN_APPLOVIN_SDK_KEY_EINTRAGEN</string>
 	<key>NSUserTrackingUsageDescription</key>
-	<string>Wir zeigen dir personalisierte Werbung, damit das Spiel kostenlos bleibt. Du kannst das jederzeit in den Einstellungen ändern.</string>
+	<string>Dies verwendet Geräteinformationen, um dir relevantere Werbung anzuzeigen.</string>
 	<key>SKAdNetworkItems</key>
 	<array>
 		<dict>

@@ -22,12 +22,7 @@ final class AdManager: NSObject {
         super.init()
     }
 
-    private var hasPlaceholderKeys: Bool {
-        Constants.maxSdkKey.contains("HIER_") ||
-        Constants.maxRewardedAdUnitID.contains("HIER_") ||
-        Constants.maxSdkKey.isEmpty ||
-        Constants.maxRewardedAdUnitID.isEmpty
-    }
+    private var hasPlaceholderKeys: Bool { Constants.hasValidAdKeys == false }
 
     func initializeSDK() {
         #if DEBUG
@@ -39,12 +34,25 @@ final class AdManager: NSObject {
             return
         }
 
+        // GDPR-Einwilligung: AppLovins eingebauter Terms-&-Privacy-Flow (Google UMP).
+        // Diese Settings MÜSSEN vor initialize(...) gesetzt werden. In GDPR-Regionen
+        // zeigt MAX dann automatisch den UMP-Consent-Dialog und steuert danach den
+        // ATT-Prompt — deshalb wird ATT nicht mehr manuell angefragt.
+        let settings = ALSdk.shared().settings
+        settings.userIdentifier = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+        settings.termsAndPrivacyPolicyFlowSettings.isEnabled = true
+        if let privacyURL = URL(string: Constants.privacyPolicyURL) {
+            settings.termsAndPrivacyPolicyFlowSettings.privacyPolicyURL = privacyURL
+        }
+        if Constants.termsOfServiceURL.isEmpty == false,
+           let termsURL = URL(string: Constants.termsOfServiceURL) {
+            settings.termsAndPrivacyPolicyFlowSettings.termsOfServiceURL = termsURL
+        }
+        settings.termsAndPrivacyPolicyFlowSettings.shouldShowTermsAndPrivacyPolicyAlertInGDPR = true
+
         let initConfig = ALSdkInitializationConfiguration(sdkKey: Constants.maxSdkKey) { builder in
             builder.mediationProvider = ALMediationProviderMAX
         }
-
-        let settings = ALSdk.shared().settings
-        settings.userIdentifier = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
 
         ALSdk.shared().initialize(with: initConfig) { [weak self] _ in
             DispatchQueue.main.async {
@@ -75,6 +83,24 @@ final class AdManager: NSObject {
             DispatchQueue.main.async {
                 completion(true)
             }
+        }
+        #endif
+    }
+
+    // MARK: - Consent / Datenschutz
+
+    /// Öffnet den CMP-Dialog erneut, damit Nutzer in GDPR-Regionen ihre
+    /// Einwilligung nachträglich ändern können ("Datenschutz verwalten").
+    /// Setzt die bestehende Einwilligung zurück und zeigt den UMP-Dialog neu.
+    func showPrivacySettings(completion: (() -> Void)? = nil) {
+        #if DEBUG
+        completion?()
+        #else
+        ALSdk.shared().cmpService.showCMPForExistingUser { error in
+            if let error {
+                print("[AdManager] CMP-Fehler: \(error.message)")
+            }
+            DispatchQueue.main.async { completion?() }
         }
         #endif
     }
