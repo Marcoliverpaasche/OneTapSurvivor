@@ -20,6 +20,25 @@ enum Constants {
     static let leaderboardID = "ots.highscore"
     static let bundleID = "eu.design-code.OneTapSurvivor"
     static let appDisplayName = "One Tap Survivor"
+
+    // ─────────────────────────────────────────────
+    // GDPR / Einwilligung (Google UMP via AppLovin MAX)
+    // Diese Datenschutz-URL wird im Consent-Dialog verlinkt.
+    // Standard: GitHub-Pages-Seite aus dem docs/-Ordner.
+    // Bei eigener Domain hier anpassen.
+    // ─────────────────────────────────────────────
+    static let privacyPolicyURL = "https://marcoliverpaasche.github.io/OneTapSurvivor/"
+
+    /// Optionale AGB/Terms-of-Service-URL. Leer lassen, wenn nicht vorhanden.
+    static let termsOfServiceURL = ""
+
+    /// true, sobald echte AppLovin-Keys eingetragen sind (kein "HIER_"-Platzhalter).
+    static var hasValidAdKeys: Bool {
+        maxSdkKey.isEmpty == false &&
+        maxRewardedAdUnitID.isEmpty == false &&
+        maxSdkKey.contains("HIER_") == false &&
+        maxRewardedAdUnitID.contains("HIER_") == false
+    }
 }
 
 // MARK: - Design-System
