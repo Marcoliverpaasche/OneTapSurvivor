@@ -13,7 +13,12 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/AppLovin/AppLovin-MAX-Swift-Package",
-            from: "12.0.0"
+            from: "13.0.0"
+        ),
+        // Google UMP für den GDPR-Consent-Flow (siehe project.yml).
+        .package(
+            url: "https://github.com/googleads/swift-package-manager-google-user-messaging-platform",
+            from: "2.3.0"
         )
     ],
     targets: [
@@ -21,6 +26,7 @@ let package = Package(
             name: "OneTapSurvivor",
             dependencies: [
                 .product(name: "AppLovinSDK", package: "AppLovin-MAX-Swift-Package"),
+                .product(name: "UserMessagingPlatform", package: "swift-package-manager-google-user-messaging-platform"),
             ]
         )
     ]
